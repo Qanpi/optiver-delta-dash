@@ -1,0 +1,18 @@
+CALIBRATION — agents only, 30 runs, NATURAL field (no feeders)
+
+natural target (un-fed, per user): top ≈ +400, worst ≈ -400, tighter spread
+
+stdev        mean  172   (target ~305)
+top5         [649, 531, 342, 280, 256]   (target [952,791,692,506,433])
+worst        mean  -421   (target ~-1040)
+flat %         18%   (target ~10%)
+profitable %   38%   (target ~44%)
+zero-sum chk mean-of-means +0.0 (must be ~0)
+
+PnL by agent type (mean / best) — informed+makers should win, churners lose:
+  fast      mean  +582.5  best   +1053  worst    +165  n/run 2
+  maker     mean   +29.2  best    +625  worst    -383  n/run 14
+  idle      mean    +0.0  best      +0  worst      +0  n/run 12
+  slow      mean    -9.0  best    +488  worst    -580  n/run 23
+  noise     mean   -28.8  best    +443  worst    -365  n/run 18
+  churner   mean  -105.8  best    +347  worst    -562  n/run 8

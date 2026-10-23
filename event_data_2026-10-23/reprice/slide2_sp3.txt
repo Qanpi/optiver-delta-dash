@@ -1,0 +1,20 @@
+SLIDE-READER BENCH — 40 runs each, naive_coin=0.0, rank out of 77
+
+strategy               mean PnL mean rank med rank  top5%  win% trades
+----------------------------------------------------------------------
+instant-EV                  764       1.1        1   100%  100%     80
+copy-top1 b6                147      28.4       14    35%   65%     89
+flat                          0      44.1       44     0%    0%      0
+slide 1-2s err0             814       1.0        1   100%  100%     94
+slide 2-4s err0             705       1.4        1   100%  100%     96
+slide 3-6s err0             350       9.3        3    70%   92%    117
+slide 5-10s err0           -400      73.3       76     0%    0%    137
+slide 8-15s err0           -604      77.3       78     0%    0%    125
+slide 12-25s err0          -670      77.9       78     0%    0%    119
+slide 3-6s err3             284      14.4        6    45%   85%    118
+slide 5-10s err3           -350      71.2       76     0%    2%    124
+slide 3-6s edge4            299      10.8        4    60%   92%     81
+sweep-once 1-2s             788       1.1        1   100%  100%     79
+sweep-once 2-4s             692       1.4        1   100%  100%     76
+sweep-once 3-6s             390       9.2        3    68%   92%     75
+sweep-once 5-10s             47      35.6       28    20%   58%     54

@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+states/
+logs/
+frames/
+*.log
+ring_uids.json

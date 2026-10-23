@@ -1,0 +1,188 @@
+{
+ "instruments": [
+  {
+   "id": "MKT1",
+   "name": "MKT1",
+   "tick_size": 0.1,
+   "paused": false,
+   "expired": false,
+   "expiration_value": null,
+   "is_test": true,
+   "parameters": {
+    "lower_bound": 0,
+    "upper_bound": 100
+   }
+  },
+  {
+   "id": "RAIN",
+   "name": "RAIN",
+   "tick_size": 1.0,
+   "paused": true,
+   "expired": true,
+   "expiration_value": 66.25,
+   "is_test": false,
+   "parameters": {
+    "lower_bound": 0,
+    "upper_bound": 100
+   }
+  }
+ ],
+ "order_books": [
+  {
+   "instrument_id": "MKT1",
+   "bids": [
+    {
+     "bid": 1,
+     "price": 49.0
+    },
+    {
+     "bid": 6,
+     "price": 45.0
+    },
+    {
+     "bid": 2,
+     "price": 43.0
+    },
+    {
+     "bid": 1,
+     "price": 42.0
+    },
+    {
+     "bid": 3,
+     "price": 40.0
+    },
+    {
+     "bid": 1,
+     "price": 39.300000000000004
+    },
+    {
+     "bid": 1,
+     "price": 39.2
+    },
+    {
+     "bid": 2,
+     "price": 38.5
+    },
+    {
+     "bid": 5,
+     "price": 38.0
+    },
+    {
+     "bid": 3,
+     "price": 37.0
+    },
+    {
+     "bid": 2,
+     "price": 35.0
+    },
+    {
+     "bid": 13,
+     "price": 30.0
+    },
+    {
+     "bid": 4,
+     "price": 25.0
+    },
+    {
+     "bid": 11,
+     "price": 20.0
+    },
+    {
+     "bid": 1,
+     "price": 15.0
+    },
+    {
+     "bid": 7,
+     "price": 10.0
+    },
+    {
+     "bid": 2,
+     "price": 8.0
+    },
+    {
+     "bid": 23,
+     "price": 5.0
+    },
+    {
+     "bid": 2,
+     "price": 4.0
+    },
+    {
+     "bid": 3,
+     "price": 2.0
+    },
+    {
+     "bid": 7,
+     "price": 1.0
+    }
+   ],
+   "asks": [
+    {
+     "ask": 1,
+     "price": 68.0
+    },
+    {
+     "ask": 5,
+     "price": 70.0
+    },
+    {
+     "ask": 3,
+     "price": 71.0
+    },
+    {
+     "ask": 3,
+     "price": 72.0
+    },
+    {
+     "ask": 2,
+     "price": 75.0
+    },
+    {
+     "ask": 10,
+     "price": 78.0
+    },
+    {
+     "ask": 1,
+     "price": 79.0
+    },
+    {
+     "ask": 18,
+     "price": 80.0
+    },
+    {
+     "ask": 3,
+     "price": 81.0
+    },
+    {
+     "ask": 7,
+     "price": 85.0
+    },
+    {
+     "ask": 13,
+     "price": 90.0
+    },
+    {
+     "ask": 15,
+     "price": 95.0
+    },
+    {
+     "ask": 5,
+     "price": 98.0
+    },
+    {
+     "ask": 8,
+     "price": 99.0
+    },
+    {
+     "ask": 55,
+     "price": 100.0
+    }
+   ]
+  },
+  {
+   "instrument_id": "RAIN",
+   "bids": [],
+   "asks": []
+  }
+ ]
+}
