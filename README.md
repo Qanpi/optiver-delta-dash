@@ -1,15 +1,14 @@
 # Delta Dash — trading bot, simulator, and strategy research
 
 Technical documentation for Optiver's **Delta Dash** trade-a-thon
-(`delta-dash-eur.optibook.net`). This repo contains a reverse-engineered protocol
-client, a local market simulator, several trading strategies, and the full data +
-analysis from a real live event. It is written so that **anyone can reproduce the
-results claimed below** — every number has a command that regenerates it and a data
-file it was derived from.
+(`delta-dash-eur.optibook.net`). This repo contains a protocol client, a local
+market simulator, several trading strategies, and the full data + analysis from a real
+live event. It is written so that **anyone can reproduce the results claimed below** —
+every number has a command that regenerates it and a data file it was derived from.
 
-> **Scope note.** This is the *trading* side only (bot + sim + strategy). An
-> authorized security assessment of the same site lives outside this repo and is not
-> documented here.
+The focus here is the **quant / trading** work: the strategies, their PnL, and how the
+market behaves. The plumbing (how we talk to the exchange) is summarized in one section
+and otherwise stays out of the way.
 
 ---
 
@@ -69,8 +68,21 @@ Primary sources (raw, so the above is checkable):
   hint-driven strategy therefore needs an off-socket text source; the bots here are
   hint-blind.
 
-Full protocol schema (frame types, nested positions, string trade prices, auth
-subprotocol) is in `event_data_2026-10-23/LESSONS.md` §3.
+### How the client talks to the exchange (brief)
+The exchange is a WebSocket. The protocol was recovered from the site's Angular bundle
+and confirmed against a live capture. Just enough to trade:
+- Player socket `wss://<host>/ws`; auth is a WebSocket subprotocol
+  `basic.<base64url(alias:password)>` with an empty password.
+- On open, send `{"type":"connect","message":{"id":<uuid4>,"username":<alias>,"game_id":<exchange_id>}}`.
+- Three client actions: `connect`, `insert_order` (`{instrument_id, side:"bid"|"ask", price, volume}`),
+  `delete_order`. Orders need no signature.
+- Server pushes `shared_update` (instruments, order books, trades, leaderboard) and
+  `user_update` (orders, positions, rank). Gotchas that bit us: positions are a
+  **nested** list keyed by `volume`, trade prices are **strings**, order acks arrive as
+  `message`-type frames. Full schema in `event_data_2026-10-23/LESSONS.md` §3.
+
+`mm_bot.py` decodes all of this; the mock (`mock_server_v2.py`) re-emits the exact same
+schema, so the production bot runs against it unchanged.
 
 ---
 
@@ -117,12 +129,60 @@ DOWN:   maker-only +166 (67% win)   long-hold −147   EV −568
 
 Caveats: the sim is calibrated to a single 8-minute tape; field sharpness and server
 rate limits at a real event are not fully known. See
-`event_data_2026-10-23/STRATEGY.md` and `delta-dash-sim-rebuild` memory for the full
-derivation and open calibration gaps.
+`event_data_2026-10-23/STRATEGY.md` for the full derivation and open calibration gaps.
 
-> **Collusion / wash-trading (ring).** A multi-account PnL-transfer strategy
-> (`ring_bot.py`) was studied in simulation only and is **not run live.** It is included
-> for completeness of the research record.
+### Algorithm overviews
+
+**Maker-only MM (`mm_bot.py --strategy mm`, `--lean 0`, no taking) — recommended.**
+Compute a reference price per instrument: an EMA-anchored fair that adapts slowly in
+calm and fast on a detected jump (`--a-slow`, `--a-fast`, `--jump-k`). Rest two-sided
+quotes `--edge` ticks around it, size `--size`, clamped to tick/bounds. Control
+inventory purely by **quote-skew** — as position drifts long, lean both quotes down so
+the ask fills first, and vice versa — never by crossing the spread. The edge is the
+favorable passive markout (~+0.5–0.9 per fill) captured over many fills; it is
+direction-neutral, which is why it is the only model positive in both up and down
+rounds. `--take-ticks`/`--lean` enable snipe/trend-ride variants, but those add taker
+cost and underperformed.
+
+**copy / follower (`mm_bot.py --strategy copy`).** Hint-blind momentum proxy. Watch the
+top-`--copy-k` leaderboard aliases' aggressive prints and drive position toward ±limit
+in their last traded direction, rate-limited to `--budget` fills/min. Rides informed
+flow without needing the slide hints. Positive but weaker than making.
+
+**long-hold (`hand_bot.py` / replay).** Buy to the position limit early and sit. One
+decision, ~5 trades, zero churn. Wins trending-up rounds, loses trending-down rounds —
+a directional bet, not an edge. Useful as the "do nothing fancy" baseline (0 PnL
+already beats >50% of the field, who finish negative).
+
+**pure-EV (`ev_bot.py`).** Maintain a running expected value and chase fair toward it.
+Worst performer live and in sim — the fair update lags the market, so it continually
+takes stale-priced liquidity and pays spread + adverse selection every event.
+
+**fade-MM (old default).** Mean-reversion maker that sells rallies / buys dips. Wins in
+a mean-reverting crowd (our old v1 sim), loses badly in an event-driven trending market
+— it shorts into the rise and gets run over. This is what we ran live and lost with.
+
+**feeder / ring model (`ring_bot.py`).** A coordinated multi-account market-making
+structure: one **main** alias accumulates PnL, `N` **feeder** aliases supply it. All
+aliases run in one asyncio loop on separate sockets so the legs are strictly sequenced.
+Per round trip:
+1. Read the RAIN book; act only when `best_ask − best_bid ≥ --min-gap` (default 3) — a
+   tick strictly inside the spread that no stranger is resting on.
+2. **main** rests 1 lot one tick inside the touch (`bb+1` or `ba-1`) and waits for the
+   server ack carrying its `order_id`.
+3. A **feeder** sends the opposite 1 lot at that price; price priority matches it against
+   main ahead of the stranger touch.
+4. Cleanup deletes any remainder; legs alternate so feeders unwind back toward flat and
+   main's inventory stays within `±--main-band` (default 2).
+
+Each trip moves ~`(spread − 2)` ticks from the feeders into main — exactly zero-sum
+across the accounts, net positive for main only because the captured spread exceeds the
+2-tick round-trip cost. Mock e2e (seed 3): main rank 1 (+707), feeders near last, 144
+legs/min. On the real 8-min tape a ≥3 spread held ~36% of the time (mean 2.1 ticks/leg);
+projected 30-min main PnL scales with leg rate — ~+697 at 30 legs/min, ~+1394 at 60/min
+(would beat the real winner's ~902). Validated in the mock and against the recorded
+tape; the per-alias `--max-rate` cap and a real server's rate limit are the open
+unknowns. `--dry-run` prints legs and sends nothing.
 
 ---
 
